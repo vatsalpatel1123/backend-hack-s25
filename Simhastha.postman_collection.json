@@ -1,0 +1,829 @@
+{
+	"info": {
+		"_postman_id": "c063363e-3d78-466e-b323-966a47474719",
+		"name": "Simhastha",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "User",
+			"item": [
+				{
+					"name": "Get All Users",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:8000/users/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"users",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"vatsal Kumar\",\n  \"phone_number\": \"1234567890\",\n  \"email\": \"vatsal@example.com\",\n  \"role\": \"pilgrim\",\n  \"location_lat\": 23.182,\n  \"location_lng\": 75.777\n}"
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/users/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"users",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:8000/users/7f4da06c-2331-4871-bb40-f20bd3f148cf",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"users",
+								"7f4da06c-2331-4871-bb40-f20bd3f148cf"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update User",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"location_lat\": 23.183,\n  \"location_lng\": 75.778\n}"
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/users/7f4da06c-2331-4871-bb40-f20bd3f148cf",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"users",
+								"7f4da06c-2331-4871-bb40-f20bd3f148cf"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Facilities",
+			"item": [
+				{
+					"name": "Create Facility",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"type\": \"ghat\",\n  \"name\": \"Ram Ghat\",\n  \"lat\": 23.1815,\n  \"lng\": 75.7681,\n  \"description\": \"Main bathing ghat on the Kshipra River.\"\n}"
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/facilities/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"facilities",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Facilities",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:8000/facilities/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"facilities",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Nearby Facilities",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:8000/facilities/?lat=23.18&lng=75.77",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"facilities",
+								""
+							],
+							"query": [
+								{
+									"key": "lat",
+									"value": "23.18"
+								},
+								{
+									"key": "lng",
+									"value": "75.77"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Shuttles",
+			"item": [
+				{
+					"name": "Create Shuttle",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"route_name\": \"Ring Road Express\",\n  \"current_lat\": 23.19,\n  \"current_lng\": 75.78,\n  \"capacity\": 50,\n  \"occupancy\": 15\n}"
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/shuttles/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"shuttles",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Shuttle Location",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"current_lat\": 23.191,\n  \"current_lng\": 75.781,\n  \"occupancy\": 20\n}"
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/shuttles/278e14b5-c037-4f0e-859a-bf2c1fba4a21",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"shuttles",
+								"278e14b5-c037-4f0e-859a-bf2c1fba4a21"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Parking",
+			"item": [
+				{
+					"name": "Create Parking",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"parking_area_name\": \"Nanakheda Bus Stand Parking\",\n  \"lat\": 23.176,\n  \"lng\": 75.76,\n  \"total_capacity\": 500,\n  \"available_capacity\": 350\n}"
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/parking/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"parking",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Parking Availability",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:8000/parking/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"parking",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Crowd Density",
+			"item": [
+				{
+					"name": "Get All Crowd Data",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:8000/crowd/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"crowd",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Crowd density report",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n        \"location_id\": \"b39a4d1b-735b-40e1-95d3-f003e332bc99\",\n        \"people_count\": 500,\n        \"density_level\": \"high\"\n      }"
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/crowd/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"crowd",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Crowd Density Report",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"density_level\": \"critical\"}"
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/crowd/50579abd-ca06-4ed2-a462-3a2abd63db10",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"crowd",
+								"50579abd-ca06-4ed2-a462-3a2abd63db10"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Emergency",
+			"item": [
+				{
+					"name": "Get All Emergency Reports",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:8000/emergency/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"emergency",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Emergency Report",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"status\": \"resolved\"}"
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/emergency/{report_id}",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"emergency",
+								"{report_id}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Emergency Reports",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"user_id\": \"7f4da06c-2331-4871-bb40-f20bd3f148cf\",\n  \"lat\": 23.181,\n  \"lng\": 75.768,\n  \"type\": \"medical\",\n  \"description\": \"Elderly person fainted.\",\n  \"priority\": \"high\"\n}"
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/emergency/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"emergency",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Missing Persons",
+			"item": [
+				{
+					"name": "Create Report Missing Person",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"reported_by\": \"b10449b3-f361-4fc7-82c7-dfa3e1938e25\",\n  \"name\": \"Suresh\",\n  \"age\": 7,\n  \"gender\": \"male\",\n  \"last_seen_lat\": 23.182,\n  \"last_seen_lng\": 75.769,\n  \"description\": \"Wearing a red t-shirt and blue shorts.\"\n}"
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/missing/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"missing",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Missing Person Status",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"found\"\n}"
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/missing/89e40652-7511-4111-ba4c-0fd118a80a07",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"missing",
+								"89e40652-7511-4111-ba4c-0fd118a80a07"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Missing Person Reports",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:8000/missing/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"missing",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Routes",
+			"item": [
+				{
+					"name": "Create Route",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n        \"route_name\": \"Ghat to Parking\",\n        \"start_point_lat\": 23.181,\n        \"start_point_lng\": 75.768,\n        \"end_point_lat\": 23.185,\n        \"end_point_lng\": 75.780,\n        \"route_type\": \"walking\"\n      }"
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/routes/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"routes",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Routes",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:8000/routes/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"routes",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Route By ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:8000/routes/c07e6431-45b8-46e5-8181-54c86072ca96",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"routes",
+								"c07e6431-45b8-46e5-8181-54c86072ca96"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Route",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"crowd_avoidance_score\": 80}"
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/routes/c07e6431-45b8-46e5-8181-54c86072ca96",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"routes",
+								"c07e6431-45b8-46e5-8181-54c86072ca96"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Smart Bands",
+			"item": [
+				{
+					"name": "Create Smart Band",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"band_code\": \"SB-12345\",\n  \"assigned_user\": \"b10449b3-f361-4fc7-82c7-dfa3e1938e25\",\n  \"status\": \"active\"\n}"
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/smartbands/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"smartbands",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Smart Bands",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:8000/smartbands/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"smartbands",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Smart Band",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"status\": \"active\"}"
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/smartbands/df2dbe60-ae9b-4e3a-b4c8-e17dd3196f48",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"smartbands",
+								"df2dbe60-ae9b-4e3a-b4c8-e17dd3196f48"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
