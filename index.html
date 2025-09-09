@@ -164,19 +164,38 @@
       z-index: 100;
     }
 
-    .back-btn, .refresh-btn, .heat-toggle {
+    .back-btn, .refresh-btn, .heat-toggle, .locations-toggle {
       background: rgba(255,255,255,0.2);
       border: none;
       color: white;
       padding: 8px 12px;
       border-radius: 8px;
-      font-size: 14px;
+      font-size: 12px;
       cursor: pointer;
       transition: all 0.3s ease;
+      white-space: nowrap;
     }
 
-    .back-btn:active, .refresh-btn:active, .heat-toggle:active {
+    .back-btn:active, .refresh-btn:active, .heat-toggle:active, .locations-toggle:active {
       background: rgba(255,255,255,0.3);
+    }
+
+    .header-controls {
+      display: flex;
+      gap: 8px;
+    }
+
+    .screen-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 15px;
+    }
+
+    .screen-header h2 {
+      flex: 1;
+      text-align: center;
+      margin: 0;
     }
 
     .screen-header h2 {
@@ -760,6 +779,559 @@
       transform: scale(0.95);
     }
 
+    /* Pulse animation for user location marker */
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 2px 6px rgba(0,0,0,0.3), 0 0 0 0 rgba(0, 123, 255, 0.7);
+      }
+      70% {
+        box-shadow: 0 2px 6px rgba(0,0,0,0.3), 0 0 0 10px rgba(0, 123, 255, 0);
+      }
+      100% {
+        box-shadow: 0 2px 6px rgba(0,0,0,0.3), 0 0 0 0 rgba(0, 123, 255, 0);
+      }
+    }
+
+    /* Shuttle Screen Styles */
+    .shuttle-content {
+      padding: 15px;
+      height: calc(100% - 60px);
+      overflow-y: auto;
+    }
+
+    .shuttle-tabs {
+      display: flex;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #eee;
+    }
+
+    .shuttle-tabs .tab-btn {
+      flex: 1;
+      padding: 12px 8px;
+      border: none;
+      background: none;
+      font-size: 12px;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s ease;
+    }
+
+    .shuttle-tabs .tab-btn.active {
+      border-bottom-color: #FF6B35;
+      color: #FF6B35;
+      font-weight: 600;
+    }
+
+    .shuttle-tab-content {
+      display: none;
+    }
+
+    .shuttle-tab-content.active {
+      display: block;
+    }
+
+    .route-item, .stop-item, .vehicle-item {
+      background: white;
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border-left: 4px solid #FF6B35;
+    }
+
+    .route-header, .stop-header, .vehicle-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .route-name, .stop-name, .vehicle-name {
+      font-weight: 600;
+      color: #333;
+      font-size: 16px;
+    }
+
+    .route-status, .stop-status, .vehicle-status {
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .status-active {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .status-delayed {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .status-inactive {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .route-details, .stop-details, .vehicle-details {
+      font-size: 14px;
+      color: #666;
+      line-height: 1.4;
+    }
+
+    .tracking-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .map-toggle-btn {
+      background: #17a2b8;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    /* Reports Screen Styles */
+    .reports-content {
+      padding: 15px;
+      height: calc(100% - 60px);
+      overflow-y: auto;
+    }
+
+    .reports-tabs {
+      display: flex;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #eee;
+    }
+
+    .reports-tabs .tab-btn {
+      flex: 1;
+      padding: 12px 8px;
+      border: none;
+      background: none;
+      font-size: 12px;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s ease;
+    }
+
+    .reports-tabs .tab-btn.active {
+      border-bottom-color: #FF6B35;
+      color: #FF6B35;
+      font-weight: 600;
+    }
+
+    .reports-tab-content {
+      display: none;
+    }
+
+    .reports-tab-content.active {
+      display: block;
+    }
+
+    .report-item {
+      background: white;
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border-left: 4px solid #FF6B35;
+    }
+
+    .report-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .report-id {
+      font-weight: 600;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .report-status {
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .status-open {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .status-in-progress {
+      background: #d1ecf1;
+      color: #0c5460;
+    }
+
+    .status-resolved {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .report-details {
+      font-size: 14px;
+      color: #666;
+      line-height: 1.4;
+    }
+
+    .report-meta {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+      font-size: 12px;
+      color: #888;
+    }
+
+    .report-actions {
+      margin-top: 10px;
+      display: flex;
+      gap: 8px;
+    }
+
+    .action-btn-small {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn-view {
+      background: #17a2b8;
+      color: white;
+    }
+
+    .btn-update {
+      background: #ffc107;
+      color: #212529;
+    }
+
+    .btn-contact {
+      background: #28a745;
+      color: white;
+    }
+
+    /* Crowd Information Screen Styles */
+    .crowd-content {
+      padding: 15px;
+      height: calc(100% - 60px);
+      overflow-y: auto;
+    }
+
+    .crowd-summary {
+      margin-bottom: 25px;
+    }
+
+    .summary-stats {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .stat-card {
+      flex: 1;
+      background: white;
+      padding: 15px;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .stat-number {
+      font-size: 20px;
+      font-weight: 700;
+      color: #FF6B35;
+      margin-bottom: 5px;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #666;
+    }
+
+    .crowd-sectors {
+      margin-bottom: 25px;
+    }
+
+    .sector-item {
+      background: white;
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .sector-info {
+      flex: 1;
+    }
+
+    .sector-name {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 5px;
+    }
+
+    .sector-details {
+      font-size: 12px;
+      color: #666;
+    }
+
+    .density-indicator {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      text-align: center;
+      min-width: 60px;
+    }
+
+    .density-low {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .density-medium {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .density-high {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .crowd-actions {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 25px;
+    }
+
+    .crowd-tips {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 12px;
+    }
+
+    .tips-list {
+      margin-top: 10px;
+    }
+
+    .tip-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .tip-item:last-child {
+      border-bottom: none;
+    }
+
+    .tip-icon {
+      font-size: 16px;
+      width: 24px;
+      text-align: center;
+    }
+
+    .tip-text {
+      font-size: 14px;
+      color: #555;
+    }
+
+    /* Chatbot Styles */
+    .chatbot-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 10000;
+    }
+
+    .chatbot-button {
+      width: 60px;
+      height: 60px;
+      background: #FF6B35;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+      transition: all 0.3s ease;
+      animation: pulse-chat 2s infinite;
+    }
+
+    .chatbot-button:hover {
+      transform: scale(1.1);
+    }
+
+    .chatbot-window {
+      position: absolute;
+      bottom: 70px;
+      right: 0;
+      width: 320px;
+      height: 450px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .chatbot-window.open {
+      display: flex;
+    }
+
+    .chatbot-header {
+      background: #FF6B35;
+      color: white;
+      padding: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .chatbot-header h4 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .close-chat {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 0;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .chatbot-messages {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      background: #f8f9fa;
+    }
+
+    .bot-message, .user-message {
+      margin-bottom: 15px;
+    }
+
+    .message-content {
+      background: white;
+      padding: 12px;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.4;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .user-message .message-content {
+      background: #FF6B35;
+      color: white;
+      margin-left: 40px;
+    }
+
+    .bot-message .message-content {
+      margin-right: 40px;
+    }
+
+    .quick-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .quick-btn {
+      background: #e9ecef;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 16px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .quick-btn:hover {
+      background: #FF6B35;
+      color: white;
+    }
+
+    .chatbot-input {
+      padding: 15px;
+      background: white;
+      border-top: 1px solid #eee;
+      display: flex;
+      gap: 10px;
+    }
+
+    .chatbot-input input {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 20px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .send-btn {
+      background: #FF6B35;
+      border: none;
+      color: white;
+      padding: 10px 15px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    @keyframes pulse-chat {
+      0% {
+        box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+      }
+      50% {
+        box-shadow: 0 4px 12px rgba(255, 107, 53, 0.6);
+      }
+      100% {
+        box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+      }
+    }
+
+    /* Mobile adjustments for chatbot */
+    @media (max-width: 768px) {
+      .chatbot-window {
+        width: calc(100vw - 40px);
+        height: 400px;
+        right: -10px;
+      }
+
+      .chatbot-container {
+        right: 15px;
+        bottom: 15px;
+      }
+    }
+
     .sector-marker {
       cursor: pointer;
       transition: all 0.3s ease;
@@ -1041,10 +1613,28 @@
           <p>Find facilities and attractions</p>
         </div>
 
+        <div class="dashboard-card" onclick="showScreen('shuttle-screen')">
+          <div class="card-icon">🚌</div>
+          <h3>Shuttle Routes</h3>
+          <p>Real-time shuttle tracking</p>
+        </div>
+
         <div class="dashboard-card" onclick="showScreen('emergency-screen')">
           <div class="card-icon">🚨</div>
           <h3>Emergency</h3>
           <p>Report emergencies quickly</p>
+        </div>
+
+        <div class="dashboard-card" onclick="showScreen('reports-screen')">
+          <div class="card-icon">📋</div>
+          <h3>Reports List</h3>
+          <p>View all submitted reports</p>
+        </div>
+
+        <div class="dashboard-card" onclick="showScreen('crowd-screen')">
+          <div class="card-icon">👥</div>
+          <h3>Crowd Info</h3>
+          <p>Real-time crowd density</p>
         </div>
 
         <div class="dashboard-card" onclick="showScreen('missing-screen')">
@@ -1070,9 +1660,12 @@
     <!-- Map Screen -->
     <div id="map-screen" class="screen">
       <div class="screen-header">
-        <button class="back-btn" onclick="showScreen('dashboard-screen')">← Back</button>
+        <button class="back-btn" onclick="showScreen('dashboard-screen')" id="mapBackBtn">← Dashboard</button>
         <h2>Map Navigation</h2>
-        <button class="heat-toggle" onclick="toggleHeatMap()" id="heatToggle">🔥 Heat Map</button>
+        <div class="header-controls">
+          <button class="heat-toggle" onclick="toggleHeatMap()" id="heatToggle">🔥 Heat Map</button>
+          <button class="locations-toggle" onclick="toggleNearbyMarkers()" id="locationsToggle">📍 Locations</button>
+        </div>
       </div>
       <div id="map"></div>
 
@@ -1121,6 +1714,47 @@
       </div>
     </div>
 
+    <!-- Shuttle Routes Screen -->
+    <div id="shuttle-screen" class="screen">
+      <div class="screen-header">
+        <button class="back-btn" onclick="showScreen('dashboard-screen')">← Back</button>
+        <h2>Shuttle Routes</h2>
+        <button class="refresh-btn" onclick="refreshShuttleData()">🔄</button>
+      </div>
+
+      <div class="shuttle-content">
+        <div class="shuttle-tabs">
+          <button class="tab-btn active" onclick="showShuttleTab('routes', this)">🚌 Routes</button>
+          <button class="tab-btn" onclick="showShuttleTab('stops', this)">🚏 Stops</button>
+          <button class="tab-btn" onclick="showShuttleTab('live', this)">📍 Live Tracking</button>
+        </div>
+
+        <div id="shuttle-routes" class="shuttle-tab-content active">
+          <div class="route-list" id="routesList">
+            <!-- Routes will be populated here -->
+          </div>
+        </div>
+
+        <div id="shuttle-stops" class="shuttle-tab-content">
+          <div class="stops-list" id="stopsList">
+            <!-- Stops will be populated here -->
+          </div>
+        </div>
+
+        <div id="shuttle-live" class="shuttle-tab-content">
+          <div class="live-tracking" id="liveTracking">
+            <div class="tracking-header">
+              <h4>🚌 Live Shuttle Locations</h4>
+              <button onclick="toggleShuttleMap()" class="map-toggle-btn">📍 Show on Map</button>
+            </div>
+            <div class="shuttle-vehicles" id="shuttleVehicles">
+              <!-- Live shuttle data will be populated here -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Emergency Report Screen -->
     <div id="emergency-screen" class="screen">
       <div class="screen-header">
@@ -1154,6 +1788,104 @@
           </div>
           <button type="submit" class="submit-btn">🚨 Submit Emergency Report</button>
         </form>
+      </div>
+    </div>
+
+    <!-- Reports List Screen -->
+    <div id="reports-screen" class="screen">
+      <div class="screen-header">
+        <button class="back-btn" onclick="showScreen('dashboard-screen')">← Back</button>
+        <h2>📋 Reports List</h2>
+        <button class="refresh-btn" onclick="refreshReports()">🔄</button>
+      </div>
+
+      <div class="reports-content">
+        <div class="reports-tabs">
+          <button class="tab-btn active" onclick="showReportsTab('emergency', this)">🚨 Emergency</button>
+          <button class="tab-btn" onclick="showReportsTab('missing', this)">👤 Missing</button>
+          <button class="tab-btn" onclick="showReportsTab('found', this)">📦 Found Items</button>
+        </div>
+
+        <div id="emergency-reports" class="reports-tab-content active">
+          <div class="reports-list" id="emergencyReportsList">
+            <!-- Emergency reports will be populated here -->
+          </div>
+        </div>
+
+        <div id="missing-reports" class="reports-tab-content">
+          <div class="reports-list" id="missingReportsList">
+            <!-- Missing person reports will be populated here -->
+          </div>
+        </div>
+
+        <div id="found-reports" class="reports-tab-content">
+          <div class="reports-list" id="foundReportsList">
+            <!-- Found items reports will be populated here -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Crowd Information Screen -->
+    <div id="crowd-screen" class="screen">
+      <div class="screen-header">
+        <button class="back-btn" onclick="showScreen('dashboard-screen')">← Back</button>
+        <h2>👥 Crowd Information</h2>
+        <button class="refresh-btn" onclick="refreshCrowdData()">🔄</button>
+      </div>
+
+      <div class="crowd-content">
+        <div class="crowd-summary">
+          <h3>📊 Current Status</h3>
+          <div class="summary-stats">
+            <div class="stat-card">
+              <div class="stat-number" id="totalVisitors">25,847</div>
+              <div class="stat-label">Total Visitors</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-number" id="currentDensity">Medium</div>
+              <div class="stat-label">Overall Density</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-number" id="peakTime">6:00 PM</div>
+              <div class="stat-label">Expected Peak</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="crowd-sectors">
+          <h3>🗺️ Sector-wise Density</h3>
+          <div class="sectors-list" id="crowdSectorsList">
+            <!-- Crowd data will be populated here -->
+          </div>
+        </div>
+
+        <div class="crowd-actions">
+          <button onclick="showCrowdMap()" class="action-btn primary-btn">
+            🗺️ View on Map
+          </button>
+          <button onclick="getCrowdAlerts()" class="action-btn secondary-btn">
+            🔔 Get Alerts
+          </button>
+        </div>
+
+        <div class="crowd-tips">
+          <h3>💡 Tips for Better Experience</h3>
+          <div class="tips-list">
+            <div class="tip-item">
+              <span class="tip-icon">⏰</span>
+              <span class="tip-text">Visit early morning (5-7 AM) for less crowds</span>
+            </div>
+            <div class="tip-item">
+              <span class="tip-icon">🚶</span>
+              <span class="tip-text">Use alternative routes during peak hours</span>
+            </div>
+            <div class="tip-item">
+              <span class="tip-icon">📱</span>
+              <span class="tip-text">Keep this app handy for real-time updates</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1220,6 +1952,39 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- Floating Chatbot -->
+  <div id="chatbot-container" class="chatbot-container">
+    <div id="chatbot-button" class="chatbot-button" onclick="toggleChatbot()">
+      💬
+    </div>
+
+    <div id="chatbot-window" class="chatbot-window">
+      <div class="chatbot-header">
+        <h4>🕉️ Kumbh Mela Assistant</h4>
+        <button onclick="toggleChatbot()" class="close-chat">×</button>
+      </div>
+
+      <div class="chatbot-messages" id="chatbotMessages">
+        <div class="bot-message">
+          <div class="message-content">
+            🙏 Namaste! I'm your Kumbh Mela assistant. How can I help you today?
+            <div class="quick-options">
+              <button onclick="askBot('aarti times')" class="quick-btn">🕯️ Aarti Times</button>
+              <button onclick="askBot('important locations')" class="quick-btn">📍 Locations</button>
+              <button onclick="askBot('safety guidelines')" class="quick-btn">🛡️ Safety</button>
+              <button onclick="askBot('transportation')" class="quick-btn">🚌 Transport</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chatbot-input">
+        <input type="text" id="chatInput" placeholder="Ask me anything about Kumbh Mela..." onkeypress="handleChatKeypress(event)">
+        <button onclick="sendMessage()" class="send-btn">📤</button>
+      </div>
+    </div>
   </div>
 
   <!-- Loading Overlay -->

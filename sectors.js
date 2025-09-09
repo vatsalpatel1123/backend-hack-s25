@@ -180,6 +180,8 @@ let userLocation = null;
 let heatMapLayer = null;
 let isHeatMapVisible = false;
 let crowdData = [];
+let nearbyMarkersLayer = null;
+let areNearbyMarkersVisible = false;
 
 // Dashboard functionality
 function toggleDashboard() {
@@ -390,8 +392,48 @@ function trackUser() {
       console.error('Geolocation error:', error);
       handleLocationError(error);
     }, options);
+
+    // Show loading state
+    if (window.app) {
+      window.app.showLoading(true);
+      window.app.showToast('Getting your location...', 'info');
+    }
   } else {
-    alert("Geolocation is not supported by this browser.");
+    const message = "Geolocation is not supported by this browser.";
+    if (window.app) {
+      window.app.showToast(message, 'error');
+    } else {
+      alert(message);
+    }
+  }
+}
+
+function handleLocationError(error) {
+  // Hide loading
+  if (window.app) {
+    window.app.showLoading(false);
+  }
+
+  let errorMessage = "Unable to get your location. ";
+  switch(error.code) {
+    case error.PERMISSION_DENIED:
+      errorMessage += "Please enable location permissions in your browser settings.";
+      break;
+    case error.POSITION_UNAVAILABLE:
+      errorMessage += "Location information is unavailable. Please try again.";
+      break;
+    case error.TIMEOUT:
+      errorMessage += "Location request timed out. Please try again.";
+      break;
+    default:
+      errorMessage += "An unknown error occurred.";
+      break;
+  }
+
+  if (window.app) {
+    window.app.showToast(errorMessage, 'error');
+  } else {
+    alert(errorMessage);
   }
 }
 
@@ -978,6 +1020,209 @@ function navigateToCoordinates(lat, lng, name) {
 document.getElementById('navigateBtn')?.addEventListener('click', startNavigation);
 document.getElementById('findLocationBtn')?.addEventListener('click', findUserLocation);
 
+// Nearby Places Markers Management
+function createNearbyMarkersLayer() {
+  if (nearbyMarkersLayer) {
+    map.removeLayer(nearbyMarkersLayer);
+  }
+
+  nearbyMarkersLayer = L.layerGroup();
+
+  // Get nearby places data
+  let places = [];
+  if (typeof getPlacesByCategory !== 'undefined') {
+    places = getPlacesByCategory('all');
+  } else if (window.app && window.app.nearbyPlaces) {
+    places = window.app.nearbyPlaces;
+  }
+
+  places.forEach(place => {
+    const icon = createNearbyPlaceIcon(place.icon || '📍', place.type);
+    const marker = L.marker([place.lat, place.lng], { icon }).addTo(nearbyMarkersLayer);
+
+    const popupContent = `
+      <div style="min-width: 200px;">
+        <h4 style="margin: 0 0 8px 0; color: #FF6B35;">${place.icon || '📍'} ${place.name}</h4>
+        <p style="margin: 4px 0; color: #666;">${place.description}</p>
+        ${place.rating ? `<div style="margin: 4px 0;">Rating: ${'⭐'.repeat(Math.floor(place.rating))}</div>` : ''}
+        ${place.openHours ? `<div style="margin: 4px 0; font-size: 12px;">🕒 ${place.openHours}</div>` : ''}
+        ${place.facilities ? `<div style="margin: 4px 0; font-size: 12px;">🏢 ${place.facilities.slice(0, 2).join(', ')}</div>` : ''}
+        <button onclick="navigateToCoordinates(${place.lat}, ${place.lng}, '${place.name}')"
+                style="width: 100%; padding: 8px; background: #FF6B35; color: white; border: none; border-radius: 4px; margin-top: 8px; cursor: pointer;">
+          🧭 Navigate Here
+        </button>
+      </div>
+    `;
+
+    marker.bindPopup(popupContent);
+  });
+
+  return nearbyMarkersLayer;
+}
+
+function createNearbyPlaceIcon(emoji, type) {
+  const colors = {
+    'washroom': '#17a2b8',
+    'medical': '#dc3545',
+    'police_station': '#007bff',
+    'food': '#28a745',
+    'mandir': '#fd7e14',
+    'parking': '#6c757d',
+    'rest': '#6f42c1',
+    'akhada': '#e83e8c',
+    'shopping': '#20c997',
+    'atm': '#ffc107'
+  };
+
+  const color = colors[type] || '#FF6B35';
+
+  return L.divIcon({
+    className: 'nearby-place-marker',
+    html: `<div style="background-color: ${color}; width: 30px; height: 30px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; font-size: 14px;">${emoji}</div>`,
+    iconSize: [30, 30],
+    iconAnchor: [15, 15]
+  });
+}
+
+function toggleNearbyMarkers() {
+  const toggleBtn = document.getElementById('locationsToggle');
+
+  if (!areNearbyMarkersVisible) {
+    if (!nearbyMarkersLayer) {
+      nearbyMarkersLayer = createNearbyMarkersLayer();
+    }
+
+    map.addLayer(nearbyMarkersLayer);
+    areNearbyMarkersVisible = true;
+    if (toggleBtn) toggleBtn.textContent = '📍 Hide Locations';
+
+    if (window.app) {
+      window.app.showToast('Nearby locations shown on map', 'success');
+    }
+  } else {
+    if (nearbyMarkersLayer) {
+      map.removeLayer(nearbyMarkersLayer);
+    }
+    areNearbyMarkersVisible = false;
+    if (toggleBtn) toggleBtn.textContent = '📍 Show Locations';
+
+    if (window.app) {
+      window.app.showToast('Nearby locations hidden', 'info');
+    }
+  }
+}
+
+// Manual location finding function
+function findMyLocation() {
+  const btn = document.getElementById('findLocationBtn');
+  if (btn) {
+    btn.textContent = '⏳ Finding...';
+    btn.disabled = true;
+  }
+
+  if (navigator.geolocation) {
+    // Show loading state
+    if (window.app) {
+      window.app.showLoading(true);
+      window.app.showToast('Getting your location...', 'info');
+    }
+
+    const options = {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 0 // Force fresh location
+    };
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        userLocation = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+          accuracy: position.coords.accuracy
+        };
+
+        // Remove existing user marker
+        if (userMarker) {
+          map.removeLayer(userMarker);
+        }
+
+        // Add new user marker with accuracy indicator
+        const accuracyText = userLocation.accuracy < 50 ? 'High accuracy' :
+                           userLocation.accuracy < 100 ? 'Medium accuracy' : 'Low accuracy';
+
+        userMarker = L.marker([userLocation.lat, userLocation.lng], {
+          icon: L.divIcon({
+            className: 'user-marker',
+            html: '<div style="background-color: #007bff; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3); animation: pulse 2s infinite;"></div>',
+            iconSize: [20, 20],
+            iconAnchor: [10, 10]
+          })
+        }).addTo(map);
+
+        userMarker.bindPopup(`
+          <div style="text-align: center;">
+            <strong>📍 Your Location</strong><br>
+            <small>Accuracy: ±${Math.round(userLocation.accuracy)}m</small><br>
+            <small>${accuracyText}</small>
+          </div>
+        `).openPopup();
+
+        map.setView([userLocation.lat, userLocation.lng], 16);
+
+        // Update accuracy circle
+        updateAccuracyCircle(L.latLng(userLocation.lat, userLocation.lng), userLocation.accuracy);
+
+        // Hide loading and show success
+        if (window.app) {
+          window.app.showLoading(false);
+          window.app.showToast(`Location found with ${accuracyText.toLowerCase()}`, 'success');
+        }
+
+        // Reset button
+        if (btn) {
+          btn.textContent = '📍 My Location';
+          btn.disabled = false;
+        }
+
+        // Update nearby places distances if app is available
+        if (window.app && window.app.renderNearbyPlaces) {
+          window.app.renderNearbyPlaces();
+        }
+      },
+      (error) => {
+        handleLocationError(error);
+
+        // Reset button
+        if (btn) {
+          btn.textContent = '📍 My Location';
+          btn.disabled = false;
+        }
+      },
+      options
+    );
+  } else {
+    const message = "Geolocation is not supported by this browser.";
+    if (window.app) {
+      window.app.showToast(message, 'error');
+    } else {
+      alert(message);
+    }
+
+    // Reset button
+    if (btn) {
+      btn.textContent = '📍 My Location';
+      btn.disabled = false;
+    }
+  }
+}
+
 // Initialize
 loadCrowdData();
 trackUser();
+
+// Load nearby markers after a delay to ensure data is available
+setTimeout(() => {
+  if (!nearbyMarkersLayer) {
+    createNearbyMarkersLayer();
+  }
+}, 2000);
