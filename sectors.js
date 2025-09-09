@@ -177,6 +177,9 @@ for (const sectorId in sectors) {
 let userMarker = null;
 let currentRoute = null;
 let userLocation = null;
+let heatMapLayer = null;
+let isHeatMapVisible = false;
+let crowdData = [];
 
 // Dashboard functionality
 function toggleDashboard() {
@@ -446,18 +449,30 @@ function findUserLocation() {
   }
 }
 
-// Enhanced navigation with detailed route information
+// Enhanced navigation with detailed route information and crowd awareness
 function startNavigation() {
   const sectorId = document.getElementById('toSector').value;
   const destination = sectors[sectorId];
 
   if (!destination) {
-    alert("Please select a valid destination.");
+    if (window.app) {
+      window.app.showToast("Please select a valid destination.", 'warning');
+    }
     return;
   }
 
   if (!userMarker || !userLocation) {
-    alert("Please wait for your location to be detected, or click 'Find My Location'.");
+    if (window.app) {
+      window.app.showToast("Please wait for your location to be detected, or click 'Find My Location'.", 'warning');
+    }
+    return;
+  }
+
+  // Check crowd density before navigation
+  const hasCrowdWarning = checkCrowdDensityForRoute(destination);
+
+  if (hasCrowdWarning) {
+    // Warning will be shown by checkCrowdDensityForRoute function
     return;
   }
 
@@ -468,7 +483,14 @@ function startNavigation() {
 
   // Show route info panel
   const routeInfo = document.getElementById('routeInfo');
-  routeInfo.classList.add('visible');
+  if (routeInfo) {
+    routeInfo.classList.add('visible');
+  }
+
+  // Show loading state
+  if (window.app) {
+    window.app.showLoading(true);
+  }
 
   // Calculate route using Leaflet Routing Machine with OSM
   currentRoute = L.Routing.control({
@@ -481,17 +503,29 @@ function startNavigation() {
     createMarker: function() { return null; }, // Don't create default markers
     lineOptions: {
       styles: [{ color: '#FF6B35', weight: 6, opacity: 0.8 }]
-    }
+    },
+    router: L.Routing.osrmv1({
+      serviceUrl: 'https://router.project-osrm.org/route/v1',
+      profile: 'foot' // Walking directions
+    })
   }).addTo(map);
 
   currentRoute.on('routesfound', function(event) {
     const route = event.routes[0];
     displayRouteInformation(route, destination);
+
+    if (window.app) {
+      window.app.showLoading(false);
+      window.app.showToast(`Route calculated to ${destination.name}`, 'success');
+    }
   });
 
   currentRoute.on('routingerror', function(e) {
     console.error('Routing error:', e);
-    alert('Unable to calculate route. Please try again.');
+    if (window.app) {
+      window.app.showLoading(false);
+      window.app.showToast('Unable to calculate route. Please try again.', 'error');
+    }
   });
 }
 
@@ -500,28 +534,72 @@ function displayRouteInformation(route, destination) {
   const time = Math.round(route.summary.totalTime / 60); // Convert to minutes
   const crowdDensity = getCrowdDensity(destination.name);
 
+  // Calculate estimated arrival time
+  const now = new Date();
+  const arrivalTime = new Date(now.getTime() + (time * 60000));
+  const arrivalTimeStr = arrivalTime.toLocaleTimeString('en-IN', {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+
+  // Get weather-based walking conditions
+  const walkingConditions = getWalkingConditions();
+
   const routeDetails = document.getElementById('routeDetails');
-  routeDetails.innerHTML = `
-    <div style="margin-bottom: 10px;">
-      <strong>🎯 Destination:</strong> ${destination.name}
-    </div>
-    <div style="margin-bottom: 10px;">
-      <strong>📏 Distance:</strong> ${distance} km
-    </div>
-    <div style="margin-bottom: 10px;">
-      <strong>⏱️ Estimated Time:</strong> ${time} minutes
-    </div>
-    <div style="margin-bottom: 10px;">
-      <strong>👥 Crowd Density:</strong> <span style="color: ${crowdDensity.color};">${crowdDensity.level}</span>
-    </div>
-    <div style="margin-bottom: 10px;">
-      <strong>🧭 Instructions:</strong>
-      <div style="max-height: 150px; overflow-y: auto; margin-top: 5px; font-size: 12px;">
-        ${getRouteInstructions(route)}
+  if (routeDetails) {
+    routeDetails.innerHTML = `
+      <div class="route-header">
+        <h4 style="margin: 0 0 15px 0; color: #FF6B35;">🎯 ${destination.name}</h4>
       </div>
-    </div>
-    <button onclick="clearRoute()" style="width: 100%; padding: 8px; background: #dc3545; color: white; border: none; border-radius: 4px; margin-top: 10px;">Clear Route</button>
-  `;
+
+      <div class="route-stats">
+        <div class="stat-item">
+          <span class="stat-icon">📏</span>
+          <div class="stat-info">
+            <strong>${distance} km</strong>
+            <small>Distance</small>
+          </div>
+        </div>
+        <div class="stat-item">
+          <span class="stat-icon">⏱️</span>
+          <div class="stat-info">
+            <strong>${time} min</strong>
+            <small>Walking time</small>
+          </div>
+        </div>
+        <div class="stat-item">
+          <span class="stat-icon">🕐</span>
+          <div class="stat-info">
+            <strong>${arrivalTimeStr}</strong>
+            <small>Arrival time</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="route-conditions">
+        <div class="condition-item">
+          <strong>👥 Crowd Level:</strong>
+          <span style="color: ${crowdDensity.color}; font-weight: bold;">${crowdDensity.level}</span>
+        </div>
+        <div class="condition-item">
+          <strong>🌤️ Conditions:</strong>
+          <span style="color: ${walkingConditions.color};">${walkingConditions.description}</span>
+        </div>
+      </div>
+
+      <div class="route-instructions">
+        <strong>🧭 Turn-by-turn Directions:</strong>
+        <div class="instructions-list">
+          ${getEnhancedRouteInstructions(route)}
+        </div>
+      </div>
+
+      <div class="route-actions">
+        <button onclick="shareRoute('${destination.name}', '${distance}', '${time}')" class="action-btn share-btn">📤 Share Route</button>
+        <button onclick="clearRoute()" class="action-btn clear-btn">❌ Clear Route</button>
+      </div>
+    `;
+  }
 }
 
 function getCrowdDensity(sectorName) {
@@ -539,16 +617,94 @@ function getCrowdDensity(sectorName) {
   return densities[sectorName] || { level: 'Unknown', color: '#6c757d' };
 }
 
-function getRouteInstructions(route) {
+function getEnhancedRouteInstructions(route) {
   if (!route.instructions || route.instructions.length === 0) {
-    return '<div>Follow the highlighted route on the map</div>';
+    return `
+      <div class="instruction-item">
+        <span class="instruction-icon">🚶</span>
+        <div class="instruction-text">
+          <strong>Follow the highlighted route on the map</strong>
+          <small>Stay on the marked path for the safest route</small>
+        </div>
+      </div>
+    `;
   }
 
   return route.instructions.map((instruction, index) => {
     const direction = instruction.text || instruction.instruction || 'Continue';
-    const distance = instruction.distance ? `(${(instruction.distance / 1000).toFixed(1)} km)` : '';
-    return `<div style="margin: 3px 0;">${index + 1}. ${direction} ${distance}</div>`;
+    const distance = instruction.distance ? `${(instruction.distance / 1000).toFixed(1)} km` : '';
+    const icon = getInstructionIcon(direction);
+
+    return `
+      <div class="instruction-item">
+        <span class="instruction-icon">${icon}</span>
+        <div class="instruction-text">
+          <strong>${direction}</strong>
+          ${distance ? `<small>${distance}</small>` : ''}
+        </div>
+      </div>
+    `;
   }).join('');
+}
+
+function getInstructionIcon(instruction) {
+  const text = instruction.toLowerCase();
+  if (text.includes('left')) return '↰';
+  if (text.includes('right')) return '↱';
+  if (text.includes('straight') || text.includes('continue')) return '↑';
+  if (text.includes('arrive') || text.includes('destination')) return '🎯';
+  if (text.includes('start')) return '🚶';
+  return '➡️';
+}
+
+function getWalkingConditions() {
+  // Simulate walking conditions based on time of day and crowd
+  const hour = new Date().getHours();
+
+  if (hour >= 5 && hour <= 8) {
+    return { description: 'Good - Morning hours, less crowded', color: '#28a745' };
+  } else if (hour >= 9 && hour <= 11) {
+    return { description: 'Moderate - Peak bathing time', color: '#ffc107' };
+  } else if (hour >= 12 && hour <= 16) {
+    return { description: 'Hot - Afternoon sun, stay hydrated', color: '#fd7e14' };
+  } else if (hour >= 17 && hour <= 20) {
+    return { description: 'Good - Evening hours, pleasant', color: '#28a745' };
+  } else {
+    return { description: 'Excellent - Night hours, cool', color: '#17a2b8' };
+  }
+}
+
+function shareRoute(destinationName, distance, time) {
+  if (navigator.share) {
+    navigator.share({
+      title: `Route to ${destinationName}`,
+      text: `I'm heading to ${destinationName} at Kumbh Mela. Distance: ${distance} km, Time: ${time} minutes.`,
+      url: window.location.href
+    }).catch(console.error);
+  } else {
+    // Fallback for browsers that don't support Web Share API
+    const shareText = `I'm heading to ${destinationName} at Kumbh Mela. Distance: ${distance} km, Time: ${time} minutes. ${window.location.href}`;
+
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(shareText).then(() => {
+        if (window.app) {
+          window.app.showToast('Route details copied to clipboard!', 'success');
+        }
+      });
+    } else {
+      // Final fallback
+      const textArea = document.createElement('textarea');
+      textArea.value = shareText;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+
+      if (window.app) {
+        window.app.showToast('Route details copied to clipboard!', 'success');
+      }
+    }
+  }
 }
 
 function clearRoute() {
@@ -561,9 +717,267 @@ function clearRoute() {
   routeInfo.classList.remove('visible');
 }
 
-// Event listeners
-document.getElementById('navigateBtn').addEventListener('click', startNavigation);
-document.getElementById('findLocationBtn').addEventListener('click', findUserLocation);
+// Heat Map Implementation
+async function loadCrowdData() {
+  try {
+    const response = await apiService.getCrowdDensity();
+    if (response.success) {
+      crowdData = response.data;
+    } else {
+      // Fallback to simulated crowd data
+      generateSimulatedCrowdData();
+    }
+  } catch (error) {
+    console.error('Error loading crowd data:', error);
+    generateSimulatedCrowdData();
+  }
+}
 
-// Start tracking the user's location
+function generateSimulatedCrowdData() {
+  // Generate simulated crowd density data for demonstration
+  crowdData = [
+    // High density at main ghat
+    { lat: 23.1287723, lng: 75.7933631, intensity: 0.9 },
+    { lat: 23.1288, lng: 75.7934, intensity: 0.8 },
+    { lat: 23.1287, lng: 75.7933, intensity: 0.85 },
+
+    // Medium density at bathing areas
+    { lat: 23.1290, lng: 75.7940, intensity: 0.6 },
+    { lat: 23.1289, lng: 75.7939, intensity: 0.55 },
+
+    // Lower density at parking areas
+    { lat: 23.1280, lng: 75.7935, intensity: 0.3 },
+    { lat: 23.1285, lng: 75.7925, intensity: 0.25 },
+
+    // Variable density at other sectors
+    { lat: 23.1295, lng: 75.7930, intensity: 0.4 },
+    { lat: 23.1295, lng: 75.7940, intensity: 0.5 },
+    { lat: 23.1275, lng: 75.7925, intensity: 0.2 }
+  ];
+}
+
+function createHeatMap() {
+  if (!crowdData.length) return null;
+
+  const heatData = crowdData.map(point => [point.lat, point.lng, point.intensity]);
+
+  return L.heatLayer(heatData, {
+    radius: 25,
+    blur: 15,
+    maxZoom: 18,
+    gradient: {
+      0.0: 'green',
+      0.3: 'yellow',
+      0.6: 'orange',
+      0.8: 'red',
+      1.0: 'darkred'
+    }
+  });
+}
+
+function toggleHeatMap() {
+  const toggleBtn = document.getElementById('heatToggle');
+
+  if (!isHeatMapVisible) {
+    if (!heatMapLayer) {
+      heatMapLayer = createHeatMap();
+    }
+
+    if (heatMapLayer) {
+      map.addLayer(heatMapLayer);
+      isHeatMapVisible = true;
+      if (toggleBtn) toggleBtn.textContent = '❄️ Hide Heat';
+
+      // Show heat map legend
+      showHeatMapLegend();
+    }
+  } else {
+    if (heatMapLayer) {
+      map.removeLayer(heatMapLayer);
+      isHeatMapVisible = false;
+      if (toggleBtn) toggleBtn.textContent = '🔥 Heat Map';
+
+      // Hide heat map legend
+      hideHeatMapLegend();
+    }
+  }
+}
+
+function showHeatMapLegend() {
+  let legend = document.getElementById('heatMapLegend');
+  if (!legend) {
+    legend = document.createElement('div');
+    legend.id = 'heatMapLegend';
+    legend.className = 'heat-map-legend';
+    legend.innerHTML = `
+      <h4>Crowd Density</h4>
+      <div class="legend-item"><span class="legend-color" style="background: green;"></span> Low</div>
+      <div class="legend-item"><span class="legend-color" style="background: yellow;"></span> Medium</div>
+      <div class="legend-item"><span class="legend-color" style="background: orange;"></span> High</div>
+      <div class="legend-item"><span class="legend-color" style="background: red;"></span> Very High</div>
+      <div class="legend-item"><span class="legend-color" style="background: darkred;"></span> Critical</div>
+    `;
+    document.body.appendChild(legend);
+  }
+  legend.style.display = 'block';
+}
+
+function hideHeatMapLegend() {
+  const legend = document.getElementById('heatMapLegend');
+  if (legend) {
+    legend.style.display = 'none';
+  }
+}
+
+// Enhanced navigation with crowd awareness
+function checkCrowdDensityForRoute(destination) {
+  const destCoords = destination.coords;
+  const nearbyDensity = crowdData.filter(point => {
+    const distance = calculateDistance(destCoords, [point.lat, point.lng]);
+    return distance < 0.1; // Within 100 meters
+  });
+
+  const avgDensity = nearbyDensity.length > 0
+    ? nearbyDensity.reduce((sum, point) => sum + point.intensity, 0) / nearbyDensity.length
+    : 0;
+
+  if (avgDensity > 0.7) {
+    showCrowdWarning(destination.name, avgDensity);
+    return true;
+  }
+
+  return false;
+}
+
+function showCrowdWarning(destinationName, density) {
+  const warningLevel = density > 0.8 ? 'Critical' : 'High';
+  const color = density > 0.8 ? '#dc3545' : '#fd7e14';
+
+  const warning = document.createElement('div');
+  warning.className = 'crowd-warning';
+  warning.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    z-index: 10000;
+    max-width: 300px;
+    text-align: center;
+    border-left: 5px solid ${color};
+  `;
+
+  warning.innerHTML = `
+    <h3 style="margin: 0 0 10px 0; color: ${color};">⚠️ Crowd Alert</h3>
+    <p><strong>${destinationName}</strong> has <span style="color: ${color};">${warningLevel}</span> crowd density.</p>
+    <p>Consider visiting alternative locations or wait for less crowded times.</p>
+    <div style="margin-top: 15px;">
+      <button onclick="this.parentElement.parentElement.remove()" style="padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 6px; margin-right: 10px;">Continue Anyway</button>
+      <button onclick="showAlternatives('${destinationName}'); this.parentElement.parentElement.remove();" style="padding: 8px 16px; background: ${color}; color: white; border: none; border-radius: 6px;">Show Alternatives</button>
+    </div>
+  `;
+
+  document.body.appendChild(warning);
+
+  // Auto-remove after 10 seconds
+  setTimeout(() => {
+    if (warning.parentElement) {
+      warning.remove();
+    }
+  }, 10000);
+}
+
+function showAlternatives(originalDestination) {
+  const alternatives = Object.values(sectors).filter(sector =>
+    sector.name !== originalDestination &&
+    !checkCrowdDensityForRoute(sector)
+  ).slice(0, 3);
+
+  if (alternatives.length === 0) {
+    if (window.app) {
+      window.app.showToast('No less crowded alternatives available at the moment.', 'warning');
+    }
+    return;
+  }
+
+  const altDiv = document.createElement('div');
+  altDiv.className = 'alternatives-popup';
+  altDiv.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    z-index: 10000;
+    max-width: 350px;
+  `;
+
+  altDiv.innerHTML = `
+    <h3 style="margin: 0 0 15px 0; color: #28a745;">🌟 Alternative Destinations</h3>
+    ${alternatives.map(alt => `
+      <div style="padding: 10px; margin: 5px 0; background: #f8f9fa; border-radius: 8px; cursor: pointer;" onclick="navigateToSector('${Object.keys(sectors).find(key => sectors[key] === alt)}'); this.parentElement.remove();">
+        <strong>${alt.name}</strong>
+        <div style="font-size: 12px; color: #666;">${alt.description}</div>
+      </div>
+    `).join('')}
+    <button onclick="this.parentElement.remove()" style="width: 100%; padding: 10px; background: #6c757d; color: white; border: none; border-radius: 6px; margin-top: 10px;">Close</button>
+  `;
+
+  document.body.appendChild(altDiv);
+}
+
+// Global function for navigation to coordinates
+function navigateToCoordinates(lat, lng, name) {
+  if (userMarker) {
+    // Remove previous route if exists
+    if (currentRoute) {
+      map.removeControl(currentRoute);
+    }
+
+    // Create temporary destination marker
+    const destMarker = L.marker([lat, lng]).addTo(map);
+    destMarker.bindPopup(name).openPopup();
+
+    // Calculate route
+    currentRoute = L.Routing.control({
+      waypoints: [
+        L.latLng(userMarker.getLatLng()),
+        L.latLng(lat, lng)
+      ],
+      routeWhileDragging: false,
+      addWaypoints: false,
+      createMarker: function() { return null; },
+      lineOptions: {
+        styles: [{ color: '#FF6B35', weight: 6, opacity: 0.8 }]
+      }
+    }).addTo(map);
+
+    currentRoute.on('routesfound', function(event) {
+      const route = event.routes[0];
+      const distance = (route.summary.totalDistance / 1000).toFixed(2);
+      const time = Math.round(route.summary.totalTime / 60);
+
+      if (window.app) {
+        window.app.showToast(`Route to ${name}: ${distance} km, ~${time} minutes`, 'success');
+      }
+    });
+  } else {
+    if (window.app) {
+      window.app.showToast('Please wait for your location to be detected.', 'warning');
+    }
+  }
+}
+
+// Event listeners
+document.getElementById('navigateBtn')?.addEventListener('click', startNavigation);
+document.getElementById('findLocationBtn')?.addEventListener('click', findUserLocation);
+
+// Initialize
+loadCrowdData();
 trackUser();

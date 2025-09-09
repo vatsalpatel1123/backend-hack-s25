@@ -8,32 +8,510 @@
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.heat/dist/leaflet-heat.css" />
+
+  <!-- Mobile viewport optimization -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#FF6B35">
+
+  <!-- Preload critical resources -->
+  <link rel="preload" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" as="style">
+  <link rel="preload" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" as="script">
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕉️</text></svg>">
   
   <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
     html, body {
       margin: 0;
       padding: 0;
       height: 100%;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    }
-    #map {
-      width: 100%;
-      height: 100%;
-    }
-    .controls {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      z-index: 1000;
-      background: white;
-      padding: 10px;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-      max-width: 300px;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
 
+    /* App Container */
+    .app-container {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Screen Management */
+    .screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: white;
+      transform: translateX(100%);
+      transition: transform 0.3s ease-in-out;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .screen.active {
+      transform: translateX(0);
+    }
+
+    /* Dashboard Styles */
+    .dashboard-header {
+      background: linear-gradient(135deg, #FF6B35, #F7931E);
+      color: white;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .dashboard-header h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .dashboard-header p {
+      margin: 5px 0 15px 0;
+      opacity: 0.9;
+      font-size: 16px;
+    }
+
+    .location-status {
+      background: rgba(255,255,255,0.2);
+      padding: 8px 15px;
+      border-radius: 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+    }
+
+    .location-icon {
+      animation: pulse 2s infinite;
+    }
+
+    /* Dashboard Grid */
+    .dashboard-grid {
+      padding: 20px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .dashboard-card {
+      background: white;
+      border-radius: 15px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      min-height: 120px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .dashboard-card:active {
+      transform: scale(0.95);
+    }
+
+    .dashboard-card .card-icon {
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+
+    .dashboard-card h3 {
+      margin: 0 0 8px 0;
+      font-size: 16px;
+      color: #333;
+    }
+
+    .dashboard-card p {
+      margin: 0;
+      font-size: 12px;
+      color: #666;
+      line-height: 1.4;
+    }
+    /* Screen Headers */
+    .screen-header {
+      background: linear-gradient(135deg, #FF6B35, #F7931E);
+      color: white;
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .back-btn, .refresh-btn, .heat-toggle {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .back-btn:active, .refresh-btn:active, .heat-toggle:active {
+      background: rgba(255,255,255,0.3);
+    }
+
+    .screen-header h2 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    /* Map Styles */
+    #map {
+      width: 100%;
+      height: calc(100% - 60px - 80px); /* Subtract header and controls */
+      position: relative;
+    }
+
+    .map-controls {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      padding: 15px;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+      z-index: 1000;
+    }
+
+    .control-group {
+      margin-bottom: 10px;
+    }
+
+    .control-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .control-group select {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 16px;
+      background: white;
+    }
+
+    .control-buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    .primary-btn, .secondary-btn {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .primary-btn {
+      background: linear-gradient(135deg, #FF6B35, #F7931E);
+      color: white;
+    }
+
+    .secondary-btn {
+      background: #f8f9fa;
+      color: #333;
+      border: 2px solid #ddd;
+    }
+
+    .primary-btn:active, .secondary-btn:active {
+      transform: scale(0.95);
+    }
+    /* Category Tabs */
+    .category-tabs {
+      display: flex;
+      overflow-x: auto;
+      padding: 15px 20px 0;
+      gap: 10px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .tab-btn {
+      background: #f8f9fa;
+      border: 2px solid #ddd;
+      color: #666;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, #FF6B35, #F7931E);
+      color: white;
+      border-color: #FF6B35;
+    }
+
+    /* Places List */
+    .places-list {
+      padding: 20px;
+    }
+
+    .place-item {
+      background: white;
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .place-item:active {
+      transform: scale(0.98);
+    }
+
+    .place-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .place-icon {
+      font-size: 24px;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f8f9fa;
+      border-radius: 10px;
+    }
+
+    .place-info h4 {
+      margin: 0;
+      font-size: 16px;
+      color: #333;
+    }
+
+    .place-info p {
+      margin: 2px 0 0 0;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .place-distance {
+      margin-left: auto;
+      text-align: right;
+      font-size: 12px;
+      color: #FF6B35;
+      font-weight: 600;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+    }
+
+    .navigate-btn {
+      background: #FF6B35;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 10px;
+    }
+
+    .place-details {
+      display: flex;
+      gap: 10px;
+      margin-top: 4px;
+      font-size: 11px;
+    }
+
+    .place-rating {
+      color: #ffc107;
+    }
+
+    .place-hours {
+      color: #666;
+    }
+
+    .place-facilities {
+      font-size: 10px;
+      color: #888;
+      margin-top: 2px;
+      font-style: italic;
+    }
+
+    /* Form Styles */
+    .form-container {
+      padding: 20px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .mobile-form {
+      background: white;
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: border-color 0.3s ease;
+      background: white;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #FF6B35;
+      box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(135deg, #FF6B35, #F7931E);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .submit-btn:active {
+      transform: scale(0.98);
+    }
+
+    /* Loading and Toast Styles */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      color: white;
+      text-align: center;
+    }
+
+    .loading-overlay.show {
+      display: flex;
+    }
+
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(255,255,255,0.3);
+      border-top: 4px solid white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 15px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      right: 20px;
+      z-index: 10000;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: #333;
+      color: white;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      transform: translateY(-100px);
+      opacity: 0;
+      transition: all 0.3s ease;
+      pointer-events: auto;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .toast.success {
+      background: #28a745;
+    }
+
+    .toast.error {
+      background: #dc3545;
+    }
+
+    .toast.warning {
+      background: #ffc107;
+      color: #333;
+    }
+
+    /* Old Dashboard (hidden by default) */
     .dashboard {
+      display: none;
       position: absolute;
       top: 10px;
       right: 10px;
@@ -150,17 +628,136 @@
       position: absolute;
       bottom: 10px;
       left: 10px;
+      right: 10px;
       z-index: 1000;
       background: white;
-      padding: 15px;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-      max-width: 300px;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      max-height: 60vh;
+      overflow-y: auto;
       display: none;
     }
 
     .route-info.visible {
       display: block;
+    }
+
+    .route-stats {
+      display: flex;
+      justify-content: space-between;
+      margin: 15px 0;
+      gap: 10px;
+    }
+
+    .stat-item {
+      flex: 1;
+      text-align: center;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .stat-icon {
+      font-size: 20px;
+    }
+
+    .stat-info strong {
+      display: block;
+      font-size: 16px;
+      color: #333;
+    }
+
+    .stat-info small {
+      font-size: 11px;
+      color: #666;
+    }
+
+    .route-conditions {
+      margin: 15px 0;
+      padding: 12px;
+      background: #f8f9fa;
+      border-radius: 8px;
+    }
+
+    .condition-item {
+      margin: 5px 0;
+      font-size: 14px;
+    }
+
+    .route-instructions {
+      margin: 15px 0;
+    }
+
+    .instructions-list {
+      max-height: 200px;
+      overflow-y: auto;
+      margin-top: 10px;
+    }
+
+    .instruction-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .instruction-item:last-child {
+      border-bottom: none;
+    }
+
+    .instruction-icon {
+      font-size: 16px;
+      width: 24px;
+      text-align: center;
+      margin-top: 2px;
+    }
+
+    .instruction-text strong {
+      display: block;
+      font-size: 14px;
+      color: #333;
+    }
+
+    .instruction-text small {
+      font-size: 12px;
+      color: #666;
+    }
+
+    .route-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .action-btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .share-btn {
+      background: #17a2b8;
+      color: white;
+    }
+
+    .clear-btn {
+      background: #dc3545;
+      color: white;
+    }
+
+    .action-btn:active {
+      transform: scale(0.95);
     }
 
     .sector-marker {
@@ -243,48 +840,398 @@
       transform: translateY(0);
     }
 
+    /* Heat Map Legend */
+    .heat-map-legend {
+      position: absolute;
+      bottom: 100px;
+      right: 10px;
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      z-index: 1000;
+      font-size: 12px;
+      display: none;
+    }
+
+    .heat-map-legend h4 {
+      margin: 0 0 10px 0;
+      font-size: 14px;
+      color: #333;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      margin: 5px 0;
+    }
+
+    .legend-color {
+      width: 20px;
+      height: 12px;
+      margin-right: 8px;
+      border-radius: 2px;
+    }
+
+    /* Responsive Design */
     @media (max-width: 768px) {
-      .dashboard {
-        right: 5px;
-        left: 5px;
-        max-width: none;
+      .dashboard-grid {
+        padding: 15px;
+        gap: 12px;
       }
 
-      .controls {
-        left: 5px;
-        max-width: calc(100% - 10px);
+      .dashboard-card {
+        padding: 15px;
+        min-height: 100px;
       }
 
-      .route-info {
-        left: 5px;
+      .dashboard-card .card-icon {
+        font-size: 28px;
+      }
+
+      .dashboard-card h3 {
+        font-size: 14px;
+      }
+
+      .dashboard-card p {
+        font-size: 11px;
+      }
+
+      .screen-header {
+        padding: 12px 15px;
+      }
+
+      .screen-header h2 {
+        font-size: 16px;
+      }
+
+      .category-tabs {
+        padding: 10px 15px 0;
+        gap: 8px;
+      }
+
+      .tab-btn {
+        padding: 6px 12px;
+        font-size: 12px;
+      }
+
+      .form-container {
+        padding: 15px;
+      }
+
+      .mobile-form {
+        padding: 15px;
+      }
+
+      .heat-map-legend {
+        bottom: 80px;
         right: 5px;
-        max-width: none;
+        left: 5px;
+        font-size: 11px;
+      }
+
+      .map-controls {
+        padding: 12px;
+      }
+
+      .control-group select {
+        padding: 10px;
+        font-size: 14px;
+      }
+
+      .primary-btn, .secondary-btn {
+        padding: 10px;
+        font-size: 14px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .dashboard-header h1 {
+        font-size: 20px;
+      }
+
+      .dashboard-header p {
+        font-size: 14px;
+      }
+
+      .location-status {
+        font-size: 12px;
+        padding: 6px 12px;
+      }
+
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      .dashboard-card {
+        min-height: 80px;
+        padding: 12px;
+      }
+
+      .dashboard-card .card-icon {
+        font-size: 24px;
+        margin-bottom: 8px;
+      }
+
+      .control-buttons {
+        flex-direction: column;
+        gap: 8px;
+      }
+    }
+
+    /* Touch and Accessibility Improvements */
+    @media (hover: none) and (pointer: coarse) {
+      .dashboard-card:hover {
+        transform: none;
+      }
+
+      .dashboard-card:active {
+        transform: scale(0.95);
+        background: #f8f9fa;
+      }
+
+      button:hover {
+        transform: none;
+      }
+
+      button:active {
+        transform: scale(0.95);
+      }
+    }
+
+    /* Prevent zoom on input focus for iOS */
+    @media screen and (-webkit-min-device-pixel-ratio: 0) {
+      select, textarea, input[type="text"], input[type="password"],
+      input[type="datetime"], input[type="datetime-local"],
+      input[type="date"], input[type="month"], input[type="time"],
+      input[type="week"], input[type="number"], input[type="email"],
+      input[type="url"], input[type="search"], input[type="tel"],
+      input[type="color"] {
+        font-size: 16px;
       }
     }
   </style>
 </head>
 <body>
+  <!-- Main App Container -->
+  <div id="app" class="app-container">
 
-  <div id="map"></div>
+    <!-- Main Dashboard Screen -->
+    <div id="dashboard-screen" class="screen active">
+      <div class="dashboard-header">
+        <h1>🕉️ Kumbh Mela 2028</h1>
+        <p>Triveni Ghat, Ujjain</p>
+        <div class="location-status" id="locationStatus">
+          <span class="location-icon">📍</span>
+          <span id="locationText">Getting location...</span>
+        </div>
+      </div>
 
-  <!-- Navigation Controls -->
-  <div class="controls">
-    <h3 style="margin: 0 0 10px 0; color: #FF6B35;">🕉️ Triveni Ghat Navigation</h3>
-    <label for="toSector">Select Destination:</label>
-    <select id="toSector">
-      <option value="triveniGhat">Triveni Ghat (Main)</option>
-      <option value="sector1">North Sector - Main Entrance</option>
-      <option value="sector2">East Sector - Bathing Ghats</option>
-      <option value="sector3">South Sector - Parking & Transport</option>
-      <option value="sector4">West Sector - Accommodation</option>
-      <option value="sector5">Northeast Sector - Commercial</option>
-      <option value="sector6">Southwest Sector - Services</option>
-    </select><br><br>
-    <button id="navigateBtn">🧭 Start Navigation</button>
-    <button id="findLocationBtn" style="margin-left: 10px;">📍 Find My Location</button>
+      <div class="dashboard-grid">
+        <div class="dashboard-card" onclick="showScreen('map-screen')">
+          <div class="card-icon">🗺️</div>
+          <h3>Map View</h3>
+          <p>Navigate to sectors and facilities</p>
+        </div>
+
+        <div class="dashboard-card" onclick="showScreen('nearby-screen')">
+          <div class="card-icon">📍</div>
+          <h3>Nearby Places</h3>
+          <p>Find facilities and attractions</p>
+        </div>
+
+        <div class="dashboard-card" onclick="showScreen('emergency-screen')">
+          <div class="card-icon">🚨</div>
+          <h3>Emergency</h3>
+          <p>Report emergencies quickly</p>
+        </div>
+
+        <div class="dashboard-card" onclick="showScreen('missing-screen')">
+          <div class="card-icon">🔍</div>
+          <h3>Missing Person</h3>
+          <p>Report missing persons/items</p>
+        </div>
+
+        <div class="dashboard-card" onclick="showScreen('found-screen')">
+          <div class="card-icon">📦</div>
+          <h3>Found Items</h3>
+          <p>Report found items</p>
+        </div>
+
+        <div class="dashboard-card" onclick="showCrowdInfo()">
+          <div class="card-icon">👥</div>
+          <h3>Crowd Info</h3>
+          <p>Check crowd density</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Map Screen -->
+    <div id="map-screen" class="screen">
+      <div class="screen-header">
+        <button class="back-btn" onclick="showScreen('dashboard-screen')">← Back</button>
+        <h2>Map Navigation</h2>
+        <button class="heat-toggle" onclick="toggleHeatMap()" id="heatToggle">🔥 Heat Map</button>
+      </div>
+      <div id="map"></div>
+
+      <!-- Map Controls -->
+      <div class="map-controls">
+        <div class="control-group">
+          <label for="toSector">Select Destination:</label>
+          <select id="toSector">
+            <option value="triveniGhat">Triveni Ghat (Main)</option>
+            <option value="sector1">North Sector - Main Entrance</option>
+            <option value="sector2">East Sector - Bathing Ghats</option>
+            <option value="sector3">South Sector - Parking & Transport</option>
+            <option value="sector4">West Sector - Accommodation</option>
+            <option value="sector5">Northeast Sector - Commercial</option>
+            <option value="sector6">Southwest Sector - Services</option>
+          </select>
+        </div>
+        <div class="control-buttons">
+          <button id="navigateBtn" class="primary-btn">🧭 Navigate</button>
+          <button id="findLocationBtn" class="secondary-btn">📍 My Location</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nearby Places Screen -->
+    <div id="nearby-screen" class="screen">
+      <div class="screen-header">
+        <button class="back-btn" onclick="showScreen('dashboard-screen')">← Back</button>
+        <h2>Nearby Places</h2>
+        <button class="refresh-btn" onclick="refreshNearbyPlaces()">�</button>
+      </div>
+
+      <div class="category-tabs">
+        <button class="tab-btn active" onclick="showCategory('all', this)">All</button>
+        <button class="tab-btn" onclick="showCategory('washroom', this)">🚻 Washrooms</button>
+        <button class="tab-btn" onclick="showCategory('medical', this)">🏥 Medical</button>
+        <button class="tab-btn" onclick="showCategory('police_station', this)">🚔 Police</button>
+        <button class="tab-btn" onclick="showCategory('food', this)">🍽️ Food</button>
+        <button class="tab-btn" onclick="showCategory('mandir', this)">🛕 Temples</button>
+        <button class="tab-btn" onclick="showCategory('parking', this)">🅿️ Parking</button>
+        <button class="tab-btn" onclick="showCategory('rest', this)">🏕️ Rest</button>
+      </div>
+
+      <div class="places-list" id="placesList">
+        <!-- Places will be populated dynamically -->
+      </div>
+    </div>
+
+    <!-- Emergency Report Screen -->
+    <div id="emergency-screen" class="screen">
+      <div class="screen-header">
+        <button class="back-btn" onclick="showScreen('dashboard-screen')">← Back</button>
+        <h2>🚨 Emergency Report</h2>
+      </div>
+      <div class="form-container">
+        <form id="emergencyForm" class="mobile-form">
+          <div class="form-group">
+            <label for="emergency-type">Emergency Type:</label>
+            <select id="emergency-type" required>
+              <option value="">Select Emergency Type</option>
+              <option value="medical">🏥 Medical Emergency</option>
+              <option value="fire">🚒 Fire Incident</option>
+              <option value="police">🚔 Security Issue</option>
+              <option value="accident">🚗 Accident</option>
+              <option value="other">❓ Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="emergency-description">Description:</label>
+            <textarea id="emergency-description" rows="4" placeholder="Describe the emergency situation..." required></textarea>
+          </div>
+          <div class="form-group">
+            <label for="emergency-priority">Priority Level:</label>
+            <select id="emergency-priority">
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+              <option value="critical">Critical</option>
+            </select>
+          </div>
+          <button type="submit" class="submit-btn">🚨 Submit Emergency Report</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Missing Person Screen -->
+    <div id="missing-screen" class="screen">
+      <div class="screen-header">
+        <button class="back-btn" onclick="showScreen('dashboard-screen')">← Back</button>
+        <h2>🔍 Missing Person/Item</h2>
+      </div>
+      <div class="form-container">
+        <form id="missingForm" class="mobile-form">
+          <div class="form-group">
+            <label for="missing-name">Name/Item:</label>
+            <input type="text" id="missing-name" placeholder="Enter name or item description" required>
+          </div>
+          <div class="form-group">
+            <label for="missing-age">Age (if person):</label>
+            <input type="number" id="missing-age" placeholder="Age in years">
+          </div>
+          <div class="form-group">
+            <label for="missing-gender">Gender (if person):</label>
+            <select id="missing-gender">
+              <option value="">Select Gender</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="missing-description">Description:</label>
+            <textarea id="missing-description" rows="4" placeholder="Physical description, clothing, etc..." required></textarea>
+          </div>
+          <div class="form-group">
+            <label for="missing-contact">Contact Information:</label>
+            <input type="tel" id="missing-contact" placeholder="Your contact number" required>
+          </div>
+          <button type="submit" class="submit-btn">🔍 Submit Missing Report</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Found Items Screen -->
+    <div id="found-screen" class="screen">
+      <div class="screen-header">
+        <button class="back-btn" onclick="showScreen('dashboard-screen')">← Back</button>
+        <h2>📦 Found Items</h2>
+      </div>
+      <div class="form-container">
+        <form id="foundForm" class="mobile-form">
+          <div class="form-group">
+            <label for="found-item">Item Name:</label>
+            <input type="text" id="found-item" placeholder="What did you find?" required>
+          </div>
+          <div class="form-group">
+            <label for="found-description">Description:</label>
+            <textarea id="found-description" rows="4" placeholder="Detailed description of the found item..." required></textarea>
+          </div>
+          <div class="form-group">
+            <label for="found-contact">Your Contact Details:</label>
+            <input type="text" id="found-contact" placeholder="Phone number or other contact info" required>
+          </div>
+          <button type="submit" class="submit-btn">📦 Submit Found Item Report</button>
+        </form>
+      </div>
+    </div>
+
   </div>
 
-  <!-- Floating Dashboard -->
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-spinner"></div>
+    <p>Loading...</p>
+  </div>
+
+  <!-- Toast Notifications -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Old Dashboard (keeping for compatibility) -->
   <div class="dashboard" id="dashboard">
     <div class="dashboard-header" onclick="toggleDashboard()">
       <span>🚨 Kumbh Mela Services</span>
@@ -408,8 +1355,16 @@
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+  <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
 
-  <!-- Sectors + Routing -->
+  <!-- API Service -->
+  <script src="api-service.js"></script>
+
+  <!-- Nearby Places Data -->
+  <script src="nearby-places-data.js"></script>
+
+  <!-- App Scripts -->
+  <script src="app.js"></script>
   <script src="sectors.js"></script>
 
 </body>
