@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kumbh Mela Navigation - Triveni Ghat, Ujjain</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+  
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+    .controls {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 1000;
+      background: white;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      max-width: 300px;
+    }
+
+    .dashboard {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 1000;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      max-width: 350px;
+      transition: all 0.3s ease;
+    }
+
+    .dashboard-header {
+      background: linear-gradient(135deg, #FF6B35, #F7931E);
+      color: white;
+      padding: 15px;
+      border-radius: 12px 12px 0 0;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .dashboard-content {
+      padding: 0;
+      max-height: 0;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .dashboard.expanded .dashboard-content {
+      max-height: 600px;
+      padding: 20px;
+    }
+
+    .form-tabs {
+      display: flex;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #f0f0f0;
+    }
+
+    .tab-button {
+      flex: 1;
+      padding: 10px 5px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: bold;
+      color: #666;
+      transition: all 0.3s ease;
+      border-bottom: 3px solid transparent;
+    }
+
+    .tab-button.active {
+      color: #FF6B35;
+      border-bottom-color: #FF6B35;
+    }
+
+    .form-content {
+      display: none;
+    }
+
+    .form-content.active {
+      display: block;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 8px;
+      border: 2px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: border-color 0.3s ease;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #FF6B35;
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #FF6B35, #F7931E);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .submit-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .route-info {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      z-index: 1000;
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      max-width: 300px;
+      display: none;
+    }
+
+    .route-info.visible {
+      display: block;
+    }
+
+    .sector-marker {
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .sector-marker:hover {
+      transform: scale(1.1);
+    }
+
+    .user-marker {
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+
+    .facilities-popup .leaflet-popup-content {
+      margin: 0;
+      padding: 0;
+    }
+
+    .leaflet-popup-content-wrapper {
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    .leaflet-popup-tip {
+      background: white;
+    }
+
+    /* Religious theme colors */
+    .controls h3 {
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    }
+
+    .dashboard-header {
+      background: linear-gradient(135deg, #FF6B35, #F7931E);
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+    }
+
+    /* Loading animation for forms */
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+    }
+
+    /* Success message styling */
+    .success-message {
+      background: linear-gradient(135deg, #28a745, #20c997);
+      color: white;
+      padding: 10px;
+      border-radius: 6px;
+      margin: 10px 0;
+      text-align: center;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateY(-20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    /* Enhanced button styles */
+    button {
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    @media (max-width: 768px) {
+      .dashboard {
+        right: 5px;
+        left: 5px;
+        max-width: none;
+      }
+
+      .controls {
+        left: 5px;
+        max-width: calc(100% - 10px);
+      }
+
+      .route-info {
+        left: 5px;
+        right: 5px;
+        max-width: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="map"></div>
+
+  <!-- Navigation Controls -->
+  <div class="controls">
+    <h3 style="margin: 0 0 10px 0; color: #FF6B35;">🕉️ Triveni Ghat Navigation</h3>
+    <label for="toSector">Select Destination:</label>
+    <select id="toSector">
+      <option value="triveniGhat">Triveni Ghat (Main)</option>
+      <option value="sector1">North Sector - Main Entrance</option>
+      <option value="sector2">East Sector - Bathing Ghats</option>
+      <option value="sector3">South Sector - Parking & Transport</option>
+      <option value="sector4">West Sector - Accommodation</option>
+      <option value="sector5">Northeast Sector - Commercial</option>
+      <option value="sector6">Southwest Sector - Services</option>
+    </select><br><br>
+    <button id="navigateBtn">🧭 Start Navigation</button>
+    <button id="findLocationBtn" style="margin-left: 10px;">📍 Find My Location</button>
+  </div>
+
+  <!-- Floating Dashboard -->
+  <div class="dashboard" id="dashboard">
+    <div class="dashboard-header" onclick="toggleDashboard()">
+      <span>🚨 Kumbh Mela Services</span>
+      <span id="dashboardToggle">▼</span>
+    </div>
+    <div class="dashboard-content">
+      <div class="form-tabs">
+        <button class="tab-button active" onclick="showForm('emergency', this)">🚨 Emergency</button>
+        <button class="tab-button" onclick="showForm('missing', this)">🔍 Missing</button>
+        <button class="tab-button" onclick="showForm('found', this)">📦 Found</button>
+      </div>
+
+      <!-- Emergency Report Form -->
+      <div id="emergency-form" class="form-content active">
+        <h4>Emergency Report</h4>
+        <div class="form-group">
+          <label for="emergency-image">Upload Image:</label>
+          <input type="file" id="emergency-image" accept="image/*">
+        </div>
+        <div class="form-group">
+          <label for="emergency-reason">Emergency Type:</label>
+          <select id="emergency-reason">
+            <option value="">Select Emergency Type</option>
+            <option value="medical">Medical Emergency</option>
+            <option value="fire">Fire Incident</option>
+            <option value="security">Security Issue</option>
+            <option value="crowd">Crowd Control</option>
+            <option value="accident">Accident</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="emergency-remarks">Description/Remarks:</label>
+          <textarea id="emergency-remarks" rows="3" placeholder="Describe the emergency situation..."></textarea>
+        </div>
+        <div class="form-group">
+          <label for="emergency-assign">Assign to:</label>
+          <select id="emergency-assign">
+            <option value="police">🚔 Police</option>
+            <option value="medical">🏥 Medical</option>
+            <option value="fire">🚒 Fire Department</option>
+          </select>
+        </div>
+        <button class="submit-btn" onclick="submitEmergencyReport()">Submit Emergency Report</button>
+      </div>
+
+      <!-- Missing Person/Item Form -->
+      <div id="missing-form" class="form-content">
+        <h4>Missing Person/Item Report</h4>
+        <div class="form-group">
+          <label for="missing-name">Name/Item:</label>
+          <input type="text" id="missing-name" placeholder="Enter name or item description">
+        </div>
+        <div class="form-group">
+          <label for="missing-image">Upload Photo:</label>
+          <input type="file" id="missing-image" accept="image/*">
+        </div>
+        <div class="form-group">
+          <label for="missing-location">Last Seen Location:</label>
+          <select id="missing-location">
+            <option value="">Select Location</option>
+            <option value="triveniGhat">Triveni Ghat (Main)</option>
+            <option value="sector1">North Sector - Main Entrance</option>
+            <option value="sector2">East Sector - Bathing Ghats</option>
+            <option value="sector3">South Sector - Parking & Transport</option>
+            <option value="sector4">West Sector - Accommodation</option>
+            <option value="sector5">Northeast Sector - Commercial</option>
+            <option value="sector6">Southwest Sector - Services</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="missing-remarks">Additional Details:</label>
+          <textarea id="missing-remarks" rows="3" placeholder="Physical description, clothing, etc..."></textarea>
+        </div>
+        <div class="form-group">
+          <label for="missing-contact">Contact Phone:</label>
+          <input type="tel" id="missing-contact" placeholder="Enter contact number">
+        </div>
+        <button class="submit-btn" onclick="submitMissingReport()">Submit Missing Report</button>
+      </div>
+
+      <!-- Found Items Form -->
+      <div id="found-form" class="form-content">
+        <h4>Found Items Report</h4>
+        <div class="form-group">
+          <label for="found-area">Nearest Area/Sector:</label>
+          <select id="found-area">
+            <option value="">Select Area</option>
+            <option value="triveniGhat">Triveni Ghat (Main)</option>
+            <option value="sector1">North Sector - Main Entrance</option>
+            <option value="sector2">East Sector - Bathing Ghats</option>
+            <option value="sector3">South Sector - Parking & Transport</option>
+            <option value="sector4">West Sector - Accommodation</option>
+            <option value="sector5">Northeast Sector - Commercial</option>
+            <option value="sector6">Southwest Sector - Services</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="found-item">Item Name:</label>
+          <input type="text" id="found-item" placeholder="What did you find?">
+        </div>
+        <div class="form-group">
+          <label for="found-description">Description:</label>
+          <textarea id="found-description" rows="3" placeholder="Detailed description of the found item..."></textarea>
+        </div>
+        <div class="form-group">
+          <label for="found-contact">Your Contact Details:</label>
+          <input type="text" id="found-contact" placeholder="Phone number or other contact info">
+        </div>
+        <button class="submit-btn" onclick="submitFoundReport()">Submit Found Item Report</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Route Information Panel -->
+  <div class="route-info" id="routeInfo">
+    <h4 style="margin: 0 0 10px 0; color: #FF6B35;">Route Information</h4>
+    <div id="routeDetails"></div>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+
+  <!-- Sectors + Routing -->
+  <script src="sectors.js"></script>
+
+</body>
+</html>
