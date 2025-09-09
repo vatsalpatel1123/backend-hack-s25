@@ -1226,3 +1226,158 @@ setTimeout(() => {
     createNearbyMarkersLayer();
   }
 }, 2000);
+
+// Missing Person Alert System for Map
+let missingPersonMarkersLayer = L.layerGroup().addTo(map);
+
+function addMissingPersonMarker(person) {
+  if (!person || !person.lastSeenLocation) return;
+
+  // Create custom missing person icon
+  const missingPersonIcon = L.divIcon({
+    className: 'missing-person-marker',
+    html: '🚨',
+    iconSize: [40, 40],
+    iconAnchor: [20, 20],
+    popupAnchor: [0, -20]
+  });
+
+  // Create marker
+  const marker = L.marker([person.lastSeenLocation.lat, person.lastSeenLocation.lng], {
+    icon: missingPersonIcon
+  });
+
+  // Create popup content
+  const popupContent = `
+    <div class="missing-person-popup">
+      <div class="popup-header">
+        <img src="${person.photo}" alt="${person.name}" class="popup-photo">
+        <div class="popup-info">
+          <h4>MISSING: ${person.name}</h4>
+          <p>${person.age} years old, ${person.gender}</p>
+          <p class="priority-${person.priority}">Priority: ${person.priority.toUpperCase()}</p>
+        </div>
+      </div>
+      <div class="popup-details">
+        <p><strong>Last Seen:</strong> ${new Date(person.lastSeenTime).toLocaleString()}</p>
+        <p><strong>Location:</strong> ${person.lastSeenLocation.name}</p>
+        <p><strong>Description:</strong> ${person.description}</p>
+        <p><strong>Contact:</strong> ${person.reportedBy.contact}</p>
+      </div>
+      <div class="popup-actions">
+        <button onclick="showMissingPersonDetails('${person.id}')" class="popup-btn details-btn">
+          👁️ Full Details
+        </button>
+        <button onclick="reportSighting('${person.id}')" class="popup-btn sighting-btn">
+          📍 Report Sighting
+        </button>
+      </div>
+    </div>
+  `;
+
+  marker.bindPopup(popupContent, {
+    maxWidth: 300,
+    className: 'missing-person-popup-container'
+  });
+
+  // Add search radius circle for critical cases
+  if (person.priority === 'critical') {
+    const searchCircle = L.circle([person.lastSeenLocation.lat, person.lastSeenLocation.lng], {
+      radius: person.searchRadius || 1000,
+      color: '#dc3545',
+      fillColor: '#dc3545',
+      fillOpacity: 0.1,
+      weight: 2,
+      dashArray: '5, 5'
+    });
+
+    searchCircle.bindTooltip(`Search radius for ${person.name}`, {
+      permanent: false,
+      direction: 'center'
+    });
+
+    missingPersonMarkersLayer.addLayer(searchCircle);
+  }
+
+  // Add marker to layer
+  missingPersonMarkersLayer.addLayer(marker);
+
+  // Store reference for later use
+  marker.personId = person.id;
+
+  return marker;
+}
+
+function toggleMissingPersonAlerts() {
+  if (missingPersonMarkersLayer) {
+    if (map.hasLayer(missingPersonMarkersLayer)) {
+      map.removeLayer(missingPersonMarkersLayer);
+      if (window.app) {
+        window.app.showToast('Missing person alerts hidden', 'info');
+      }
+    } else {
+      map.addLayer(missingPersonMarkersLayer);
+      if (window.app) {
+        window.app.showToast('Missing person alerts shown', 'info');
+      }
+    }
+  }
+}
+
+function showMissingPersonDetails(personId) {
+  if (window.app) {
+    window.app.showMissingPersonDetails(personId);
+  }
+}
+
+function reportSighting(personId) {
+  if (window.app) {
+    window.app.reportSighting(personId);
+  }
+}
+
+function viewOnMap(personId) {
+  if (window.app) {
+    const person = window.app.missingPersonsData.find(p => p.id === personId);
+    if (person && person.lastSeenLocation) {
+      // Switch to map screen
+      window.app.showScreen('map-screen');
+
+      // Center map on last seen location
+      map.setView([person.lastSeenLocation.lat, person.lastSeenLocation.lng], 18);
+
+      // Find and open the marker popup
+      missingPersonMarkersLayer.eachLayer(layer => {
+        if (layer.personId === personId) {
+          layer.openPopup();
+        }
+      });
+
+      window.app.showToast(`Viewing ${person.name}'s last known location`, 'info');
+    }
+  }
+}
+
+function contactReporter(contact) {
+  if (window.app) {
+    window.app.showToast(`Calling ${contact}`, 'info');
+    // In a real app, this would initiate a phone call
+  }
+}
+
+function closeModal() {
+  if (window.app) {
+    window.app.closeModal();
+  }
+}
+
+// Initialize missing person alerts when the page loads
+setTimeout(() => {
+  if (window.app && window.app.missingPersonsData) {
+    window.app.missingPersonsData.forEach(person => {
+      if (person.caseStatus === 'active') {
+        addMissingPersonMarker(person);
+      }
+    });
+  }
+}, 3000);
