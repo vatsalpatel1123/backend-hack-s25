@@ -359,7 +359,7 @@ graph TB
 #### **Step 1: Clone the Repository**
 ```bash
 # Clone the project
-git clone https://github.com/your-username/simhastha-kumbh-mela-2028.git
+git clone https://github.com/vatsalpatel1123/simhastha-kumbh-mela-hackathon-2028.git
 cd simhastha-kumbh-mela-2028
 
 # Verify the structure
