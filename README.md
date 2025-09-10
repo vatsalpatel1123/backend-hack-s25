@@ -971,7 +971,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 <div align="center">
 
-## 🕉️ **Built with ❤️ for Simhastha Kumbh Mela 2028**
+## 🕉️ **Built with ❤️ for Simhastha Kumbh Mela 2028 By Vatsal Patel and Krushil Patel**
 
 ### **Triveni Ghat, Ujjain - Where Faith Meets Technology**
 
