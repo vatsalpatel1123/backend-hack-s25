@@ -1,0 +1,13 @@
+
+D:\AI\Projects\ujjain>ven\Scripts\activate
+The system cannot find the path specified.
+
+D:\AI\Projects\ujjain>venv\Scripts\activate
+
+(venv) D:\AI\Projects\ujjain>uvicorn app1:app --reload
+INFO:     Will watch for changes in these directories: ['D:\\AI\\Projects\\ujjain']
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [12232] using WatchFiles
+INFO:     Started server process [5312]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
