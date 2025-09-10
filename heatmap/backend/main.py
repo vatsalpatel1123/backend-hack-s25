@@ -13,10 +13,18 @@ from contextlib import asynccontextmanager
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Supabase configuration
-SUPABASE_URL = os.getenv("SUPABASE_URL", "https://wkkejurxdvvjwtjaquab.supabase.co")
-SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indra2VqdXJ4ZHZ2and0amFxdWFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTczOTk0NzAsImV4cCI6MjA3Mjk3NTQ3MH0.RY1MdV7my_88JH9xOcz4yjRSJ_sZ9pNIJZt3R7ql-xY")
-SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indra2VqdXJ4ZHZ2and0amFxdWFiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NzM5OTQ3MCwiZXhwIjoyMDcyOTc1NDcwfQ.8e5UNEPJgfdBQlXCyqCss6Q3PTrpxF4S-kbo4b4OV4g")
+# Supabase configuration - IMPORTANT: Set these in your .env file
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
+SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
+
+# Validate required environment variables
+if not SUPABASE_URL:
+    raise ValueError("SUPABASE_URL environment variable is required")
+if not SUPABASE_ANON_KEY:
+    raise ValueError("SUPABASE_ANON_KEY environment variable is required")
+if not SUPABASE_SERVICE_KEY:
+    raise ValueError("SUPABASE_SERVICE_KEY environment variable is required")
 
 # Initialize Supabase client
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)

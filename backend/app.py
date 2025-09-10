@@ -14,10 +14,18 @@ from supabase import create_client, Client
 import asyncpg
 from contextlib import asynccontextmanager
 
-# Environment variables
-SUPABASE_URL = os.getenv("SUPABASE_URL", "https://wkkejurxdvvjwtjaquab.supabase.co")
-SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indra2VqdXJ4ZHZ2and0amFxdWFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTczOTk0NzAsImV4cCI6MjA3Mjk3NTQ3MH0.RY1MdV7my_88JH9xOcz4yjRSJ_sZ9pNIJZt3R7ql-xY")
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:Admin@123@db.wkkejurxdvvjwtjaquab.supabase.co:5432/postgres")
+# Environment variables - IMPORTANT: Set these in your .env file
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY")
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+# Validate required environment variables
+if not SUPABASE_URL:
+    raise ValueError("SUPABASE_URL environment variable is required")
+if not SUPABASE_KEY:
+    raise ValueError("SUPABASE_ANON_KEY environment variable is required")
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL environment variable is required")
 
 # Supabase client
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
