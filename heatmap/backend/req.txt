@@ -1,0 +1,23 @@
+# FastAPI Backend Requirements
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+supabase==2.3.4
+pydantic==2.5.2
+python-multipart==0.0.6
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# Streamlit App Requirements
+streamlit==1.29.0
+requests==2.31.0
+pandas==2.1.4
+
+# Image Processing & Analysis
+Pillow==10.1.0
+numpy==1.24.4
+matplotlib==3.8.2
+seaborn==0.13.0
+scipy==1.11.4
+
+# Additional utilities
+python-dotenv==1.0.0
